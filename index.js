@@ -3,7 +3,6 @@ const colors = require("colors/safe")
 const dgram = require("dgram")
 const net = require("net")
 
-
 const magic = require("./magic.js")
 
 const drone = {
@@ -12,6 +11,17 @@ const drone = {
 	udpPort: 8895
 }
 
+let udpControl = dgram.createSocket("udp4")
+let tcpControl = new net.Socket()
+let tcpVideo = new net.Socket()
+
+let shutDown = false
+
+// Init OS wifi integration
+wifi.init({
+	// Any wifi iface is fine
+	iface: null
+})
 
 global.print = function(text, error) {
 	// Get the current time and add a leading 0 when needed
@@ -32,95 +42,110 @@ global.print = function(text, error) {
 	}
 }
 
-// Init OS wifi integration
-wifi.init({
-	// Any wifi iface is fine
-	iface: null
-})
-
-let udpControl = dgram.createSocket("udp4")
-let tcpControl = new net.Socket()
-
 
 
 print("Scanning for drone wifi network");
 
 // Scan for wifi networks
-// wifi.scan(function(err, networks) {
-// 	if (err) {
-// 		console.log(err)
-// 		print("Could not scan for wifi networks", true)
-// 	} else {
-// 		let network = false
-//
-// 		for (let i in networks) {
-// 			if (/RC Leading-[a-f0-9]{6}/.test(networks[i].ssid)) {
-// 				network = networks[i]
-// 				break
-// 			}
-// 		}
-//
-// 		if (network === false) {
-// 			print("Could not find drone network", true)
-// 		}
-// 		else {
-// 			print(`Connecting to ${network.ssid} (${network.mac})`);
-//
-// 			wifi.connect({
-// 				ssid: network.ssid,
-// 				password: ""
-// 			}, function(err) {
-// 				if (err) {
-// 					console.log(err)
-// 					console.error("Could connect to drone network");
-// 					process.exit(1)
-// 				}
-// 				console.log('Connected');
-//
-//
-//
-// 			});
-//
-// 		}
-// 	}
-// })
+wifi.scan(function(err, networks) {
+	if (err) {
+		console.log(err)
+		print("Could not scan for wifi networks", true)
+	} else {
+		let network = false
 
-tcpControl.connect(drone.tcpPort, drone.ip, function() {
-
-	console.log('Connected');
-	tcpControl.write(magic.tcpStart);
-
-	setTimeout(function () {
-		udpControl.send(magic.defaultUdp, 0, magic.defaultUdp.length, drone.udpPort, drone.ip);
-
-		setInterval(function () {
-			function genChecksum(data) {
-				return (data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[5]) & 0xFF
+		for (let i in networks) {
+			if (/RC Leading-[a-f0-9]{6}/.test(networks[i].ssid)) {
+				network = networks[i]
+				break
 			}
+		}
 
-			let data = magic.defaultUdp
+		if (network === false) {
+			print("Could not find drone network", true)
+		}
+		else {
+			print(`Connecting to ${network.ssid} (${network.mac})`);
 
-			// data[1] = Math.floor((0 + 1) * 127);
-			// data[2] = Math.floor((0) * 127);
-			// data[3] = Math.floor((0) * 255);
-			// data[4] = Math.floor((0 + 1) * 127);
-			data[3] = 0x20
-			data[6] = genChecksum(data);
+			wifi.connect({
+				ssid: network.ssid,
+				password: ""
+			}, function(err) {
+				if (err) {
+					console.log(err)
+					console.error("Could connect to drone network");
+					process.exit(1)
+				}
 
-			console.log(data);
+				tcpControl.connect(drone.tcpPort, drone.ip, function() {
+					tcpControl.write(magic.tcpStart)
 
-			udpControl.send(data, 0, magic.defaultUdp.length, drone.udpPort, drone.ip);
-		}, 50);
-	}, 1000);
+					print(colors.green("Connected to drone"))
+
+					udpControl.send(magic.defaultUdp, 0, magic.defaultUdp.length, drone.udpPort, drone.ip);
+
+					setInterval(function () {
+						function genChecksum(data) {
+							return (data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[5]) & 0xFF
+						}
+
+						if (shutDown) {
+							let stopUdp = magic.defaultUdp
+							stopUdp[3] = 0x01
+
+							udpControl.send(stopUdp, 0, stopUdp.length, drone.udpPort, drone.ip)
+							return
+						}
 
 
-});
+						let data = magic.defaultUdp
+
+						// data[1] = Math.floor((0 + 1) * 127);
+						// data[2] = Math.floor((0) * 127);
+						// data[3] = Math.floor((0) * 255);
+						// data[4] = Math.floor((0 + 1) * 127);
+						data[3] = 0x20 // Throtle
+						data[6] = genChecksum(data);
+
+						// console.log(data);
+
+						udpControl.send(data, 0, magic.defaultUdp.length, drone.udpPort, drone.ip);
+					}, 50);
+				});
+
+			});
+
+		}
+	}
+})
 
 tcpControl.on('data', function(data) {
-	console.log("data from drone:");
-	console.log(data);
+	// console.log("data from drone:");
+	// console.log(data);
 });
 
 tcpControl.on('close', function() {
 	console.log('tcpControl connection closed by drone')
 })
+//
+// tcpVideo.connect(drone.tcpPort, drone.ip, function() {
+// 	console.log("conn");
+// 	tcpControl.write(magic.videoStart);
+// });
+//
+// tcpVideo.on('data', function(data) {
+// 	console.log(data);
+// });
+
+
+
+process.on("SIGINT", function() {
+    console.log()
+	print(colors.red.bold("Stopping drone and quiting"))
+
+	shutDown = true
+
+	setTimeout(function () {
+		process.exit();
+	}, 200)
+});
