@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "colors": "^1.1.2",
+    "keypress": "^0.2.1",
     "node-wifi": "^1.2.5"
   },
   "devDependencies": {},

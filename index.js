@@ -4,6 +4,10 @@ const dgram = require("dgram")
 const net = require("net")
 
 const magic = require("./magic.js")
+const controller = require("./controller.js")
+
+
+
 
 const drone = {
 	ip: "172.16.10.1",
@@ -81,6 +85,7 @@ wifi.scan(function(err, networks) {
 					tcpControl.write(magic.tcpStart)
 
 					print(colors.green("Connected to drone"))
+					controller.start()
 
 					udpControl.send(magic.defaultUdp, 0, magic.defaultUdp.length, drone.udpPort, drone.ip);
 
@@ -100,11 +105,9 @@ wifi.scan(function(err, networks) {
 
 						let data = magic.defaultUdp
 
-						// data[1] = Math.floor((0 + 1) * 127);
-						// data[2] = Math.floor((0) * 127);
-						// data[3] = Math.floor((0) * 255);
-						// data[4] = Math.floor((0 + 1) * 127);
-						data[3] = 0x20 // Throtle
+						data[1] = Math.round((controller.state.hor + 1) * 127)
+						data[2] = Math.round((controller.state.ver + 1) * 127)
+						data[3] = Math.round(controller.state.thr * 127)
 						data[6] = genChecksum(data);
 
 						// console.log(data);
@@ -118,6 +121,8 @@ wifi.scan(function(err, networks) {
 		}
 	}
 })
+
+
 
 tcpControl.on('data', function(data) {
 	// console.log("data from drone:");
@@ -148,4 +153,4 @@ process.on("SIGINT", function() {
 	setTimeout(function () {
 		process.exit();
 	}, 200)
-});
+})
