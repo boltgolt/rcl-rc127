@@ -28,5 +28,5 @@ Left    | 4      | Left
 Right   | 6      | Right
 Home    | 7      | Throttle up
 End     | 1      | Throttle down
--       | 5      | Reset
+None    | 5      | Reset
 Q / Esc |        | Quit script
