@@ -99,7 +99,7 @@ module.exports = {
 			printState()
 
 			// Catch a ctrl+C (SIGINT) or an escape or q keypress to quit the script
-			if (key && ((key.ctrl && key.name == "c") || key.name == "q" || key.name == "escape")) {
+			if ((key.ctrl && key.name == "c") || key.name == "q" || key.name == "escape") {
 				// Print a special state
 				printState("END")
 
