@@ -1,12 +1,11 @@
 # RC Leading RC127 control/hijack script
---------------------------------------------------------------------------------
 ## Compatible drones
 
 This script probably works with a huge range of very similar drones. For example this is the one i own:
 
 ![HEMA Rebrand](http://i.imgur.com/qv9uDMw.png)
 
-But if your drone is controllable by connecting to a wifi network with an SSID that starts with "RC Leading" this script should be able to control/hijack it. 
+But if your drone is controllable by connecting to a wifi network with an SSID that starts with "RC Leading" this script should be able to control/hijack it.
 
 Sidenote: If your drone can be controlled by an android app created by [MARK mai](https://play.google.com/store/apps/developer?id=MARK%20mai) but has a different wifi AP name, this script will probably still work. You can either try to bypass the wifi connection part of the script or [open an issue](https://github.com/Boltgolt/rcl-rc127/issues/new).
 
@@ -29,5 +28,5 @@ Left    | 4      | Left
 Right   | 6      | Right
 Home    | 7      | Throttle up
 End     | 1      | Throttle down
-        | 5      | Reset
+-       | 5      | Reset
 Q / Esc |        | Quit script
