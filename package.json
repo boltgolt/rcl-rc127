@@ -2,6 +2,10 @@
   "name": "rcl-rc127",
   "version": "0.0.1",
   "description": "RC127 wifi drone controler",
+  "repository": {
+    "type" : "git",
+    "url" : "https://github.com/Boltgolt/rcl-rc127"
+  },
   "main": "index.js",
   "dependencies": {
     "colors": "^1.1.2",
