@@ -135,8 +135,8 @@ wifi.scan(function(err, networks) {
 						// Translate the 0 to 2 value of the throttle to 0-256 and insert it into the natural datagram
 						data[3] = Math.round(controller.state.thr * 127)
 
-						// Generate the mew checksum for this datagram
-						data[6] = (data[1] ^ data[2] ^ data[3] ^ data[4] ^ data[5]) & 0xFF
+						// Generate the mew XOR checksum for this datagram
+						data[6] = data[1] ^ data[2] ^ data[3] ^ 0x80
 
 						// Send the datagram off to the drone
 						udpControl.send(data, 0, magic.defaultUdp.length, drone.udpPort, drone.ip)
